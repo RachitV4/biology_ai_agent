@@ -1,16 +1,16 @@
 from pypdf import PdfReader
 
-# We are telling the code: "Go to the 'data' folder and open 'test.pdf'"
-file_path = "data/test.pdf"
+# 1. Define the file path
+file_path = "data/sample_biology.pdf"
 
-# Initialize the reader
+# 2. Create the reader object
 reader = PdfReader(file_path)
 
-# Look at the first page
+# 3. Access the first page
 page = reader.pages[0]
 
-# Extract the text from that page
+# 4. CRITICAL: Use .extract_text() to decode the binary into readable words
 text = page.extract_text()
 
-# Print it
+# 5. Print the decoded text
 print(text)

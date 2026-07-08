@@ -1,0 +1,5 @@
+pypdf
+python-dotenv
+langchain
+langchain-openai
+chromadb

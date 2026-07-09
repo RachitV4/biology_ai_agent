@@ -58,7 +58,7 @@ def index_documents(chunks, filename):
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
-    # 1. Get all text from all PDFs
+    # 1. Get all text from all PDFs #nothing
     papers = process_all_pdfs()
     
     # 2. Process, Chunk, AND Store each paper

@@ -2,12 +2,13 @@ import os
 from pypdf import PdfReader
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+# Updated to the new, supported library
+from langchain_chroma import Chroma
 
 # 1. Load your API key
 load_dotenv()
 
-# 2. Initialize the database and embedding model
+# 2. Initialize the embedding model
 embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_text_from_pdf(pdf_path):
@@ -43,12 +44,14 @@ def chunk_text(text, chunk_size=1000):
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 def index_documents(chunks, filename):
-    """Saves chunks into the persistent ChromaDB database."""
+    """Saves chunks into the persistent ChromaDB database using the latest library."""
+    # This creates/connects to your local folder 'my_vector_db'
     vector_db = Chroma(
         persist_directory="./my_vector_db",
         embedding_function=embeddings,
         collection_name="biology_papers"
     )
+    
     metadatas = [{"source": filename} for _ in chunks]
     vector_db.add_texts(texts=chunks, metadatas=metadatas)
     print(f"Stored {len(chunks)} chunks from {filename} into the database.")

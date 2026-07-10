@@ -3,3 +3,6 @@ langchain
 langchain-chroma
 chromadb
 langchain-ollama
+streamlit
+langchain-text-splitters
+uuid

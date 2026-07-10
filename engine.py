@@ -51,25 +51,35 @@ def process_and_index_pdfs_temporary(uploaded_files, session_id):
         return process_and_index_pdfs(temp_dir, session_id)
 
 def ask_agent(query, session_id):
-    """Retrieves relevant context and uses Qwen3 to answer."""
     vector_db = Chroma(
         persist_directory="./my_vector_db", 
         embedding_function=embeddings, 
         collection_name=session_id
     )
     
+    # Retrieve the 4 most relevant chunks
     docs = vector_db.similarity_search(query, k=4)
     if not docs:
         return "I couldn't find relevant information in the uploaded papers."
         
-    context_text = "\n\n".join([doc.page_content for doc in docs])
+    # Create a string with context and track sources
+    context_text = ""
+    sources = set()
+    for doc in docs:
+        context_text += f"\n\nSource: {doc.metadata.get('source', 'Unknown')}\nContent: {doc.page_content}"
+        sources.add(doc.metadata.get('source', 'Unknown'))
     
+    # Prompt the LLM to include citations
     prompt = f"""
     You are an expert biology research assistant. 
     Use the provided research context to answer the question.
+    Always cite the source document name (e.g., [source_name]) when you use information from it.
     
-    Context: {context_text}
-    Question: {query}
+    Context:
+    {context_text}
+    
+    Question: 
+    {query}
     """
     
     response = llm.invoke(prompt)

@@ -1,6 +1,6 @@
 pypdf
 python-dotenv
 langchain
-langchain-openai
 langchain-chroma
 chromadb
+langchain-ollama

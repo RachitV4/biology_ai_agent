@@ -1,15 +1,11 @@
 import os
 from pypdf import PdfReader
-from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
-# Updated to the new, supported library
+from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 
-# 1. Load your API key
-load_dotenv()
-
-# 2. Initialize the embedding model
-embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+# 1. Initialize local models
+# We use 'nomic-embed-text' for embedding and your local qwen3:14b for the LLM later
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
 def extract_text_from_pdf(pdf_path):
     """Reads a single PDF and returns its text."""
@@ -41,29 +37,33 @@ def process_all_pdfs(directory_path="data/"):
 
 def chunk_text(text, chunk_size=1000):
     """Splits a long string into smaller, manageable chunks."""
+    # Note: In production, consider RecursiveCharacterTextSplitter for better quality
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
-def index_documents(chunks, filename):
-    """Saves chunks into the persistent ChromaDB database using the latest library."""
-    # This creates/connects to your local folder 'my_vector_db'
+def index_documents(chunks, filename, session_id):
+    """Saves chunks into the local ChromaDB database."""
+    # Using the session_id as the collection name isolates the user's papers
     vector_db = Chroma(
         persist_directory="./my_vector_db",
         embedding_function=embeddings,
-        collection_name="biology_papers"
+        collection_name=session_id
     )
     
     metadatas = [{"source": filename} for _ in chunks]
     vector_db.add_texts(texts=chunks, metadatas=metadatas)
-    print(f"Stored {len(chunks)} chunks from {filename} into the database.")
+    print(f"Stored {len(chunks)} chunks from {filename} into collection '{session_id}'.")
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
-    # 1. Get all text from all PDFs #nothing
+    # This session_id will eventually come from your website
+    current_session = "biology_research_session_001"
+    
+    # 1. Get all text from all PDFs
     papers = process_all_pdfs()
     
     # 2. Process, Chunk, AND Store each paper
     for paper in papers:
         chunks = chunk_text(paper['text'])
-        index_documents(chunks, paper['filename'])
+        index_documents(chunks, paper['filename'], current_session)
         
-    print("\nAll documents have been indexed and saved to the database!")
+    print(f"\nAll documents have been indexed to session: {current_session}")

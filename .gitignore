@@ -1,3 +1,4 @@
 .env
 __pycache__/
 data/
+my_vector_db/

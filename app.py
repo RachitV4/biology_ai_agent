@@ -7,16 +7,21 @@ st.set_page_config(page_title="RacXo Agent", page_icon="🧬", layout="wide")
 
 st.title("🧬 RacXo Agent")
 
-# Initialize Session State
+# Change this:
+# if "session_id" not in st.session_state:
+#     st.session_state.session_id = str(uuid.uuid4())
+
+# To this (Hardcode it for testing):
 if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
+    st.session_state.session_id = "racxo_test_session_001"
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # --- Sidebar: Upload & Indexing ---
 with st.sidebar:
     st.header("About RacXo")
-    st.info("Your intelligent, RAG-powered biology research assistant.")
+    st.info("Your intelligent fact based, RAG-powered biology research assistant.")
     st.divider()
     st.header("Upload Research")
     

@@ -70,10 +70,11 @@ def ask_agent(query, session_id):
         sources.add(doc.metadata.get('source', 'Unknown'))
     
     # Prompt the LLM to include citations
+   # Update the prompt inside ask_agent in engine.py
     prompt = f"""
     You are an expert biology research assistant. 
     Use the provided research context to answer the question.
-    Always cite the source document name (e.g., [source_name]) when you use information from it.
+    Cite the sources provided in the context (e.g., use the filename provided in the 'Source' tag).
     
     Context:
     {context_text}
@@ -81,6 +82,7 @@ def ask_agent(query, session_id):
     Question: 
     {query}
     """
+    
     
     response = llm.invoke(prompt)
     return response.content

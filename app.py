@@ -3,44 +3,54 @@ import engine
 import uuid
 
 # --- UI Setup ---
-st.set_page_config(page_title="Biology Research Agent", layout="wide")
-st.title("🧬 Biology Research Agent")
-st.markdown("Upload your research papers and ask questions to get context-aware answers.")
+st.set_page_config(page_title="RacXo Agent", page_icon="🧬", layout="wide")
 
-# --- Session Management ---
+st.title("🧬 RacXo Agent")
+
+# Initialize Session State
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- Sidebar: Document Ingestion ---
+# --- Sidebar: Upload & Indexing ---
 with st.sidebar:
-    st.header("Upload Research Papers")
+    st.header("About RacXo")
+    st.info("Your intelligent, RAG-powered biology research assistant.")
+    st.divider()
+    st.header("Upload Research")
+    
     uploaded_files = st.file_uploader("Select PDFs", accept_multiple_files=True, type="pdf")
     
     if st.button("Index Documents"):
         if uploaded_files:
-            with st.spinner("Processing documents..."):
-                # Uses the engine's temporary processing logic
+            with st.spinner("RacXo is indexing your papers..."):
+                # Call the temporary processing function we defined in engine.py
                 status = engine.process_and_index_pdfs_temporary(uploaded_files, st.session_state.session_id)
-                st.success("Indexing complete!")
+                st.success(status)
         else:
-            st.warning("Please select files to index.")
+            st.warning("Please select files first.")
 
 # --- Chat Interface ---
+# Display historical messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Ask a question about your research..."):
-    # Display user message
+# Handle new user input
+if prompt := st.chat_input("Ask RacXo a question..."):
+    # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Display assistant response
-    with st.chat_message("assistant"):
-        with st.spinner("Analyzing research..."):
-            response = engine.ask_agent(prompt, st.session_state.session_id)
-            st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    # RacXo response
+    with st.chat_message("assistant", avatar="🧬"):
+        with st.spinner("RacXo is thinking..."):
+            try:
+                response = engine.ask_agent(prompt, st.session_state.session_id)
+                st.markdown(response)
+                # Store assistant response
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            except Exception as e:
+                st.error(f"Error: {e}")

@@ -41,10 +41,20 @@ with st.sidebar:
 
 # --- Main App Area (OUTSIDE the sidebar block) ---
 # Notice there is NO indentation here
+# --- Main App Area ---
 if synthesize_clicked:
-    with st.spinner("RacXo is analyzing across all papers..."):
-        report = engine.synthesize_research(st.session_state.session_id)
-        st.markdown(report)
+    # 1. Check if the vector database folder exists
+    if not os.path.exists("./my_vector_db"):
+        st.warning("⚠️ No research papers indexed. Please upload and index your papers first!")
+    else:
+        with st.spinner("RacXo is analyzing across all papers..."):
+            report = engine.synthesize_research(st.session_state.session_id)
+            
+            # 2. Check if the engine returned the "no docs" message
+            if "No documents indexed yet" in report:
+                st.warning("⚠️ No documents found in this session. Please upload and index your papers first.")
+            else:
+                st.markdown(report)
 
     # 5-file limit enforced
     uploaded_files = st.file_uploader(

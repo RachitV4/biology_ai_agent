@@ -24,6 +24,28 @@ with st.sidebar:
     st.info("Your intelligent, RAG-powered biology research assistant.")
     st.divider()
     
+    # This remains inside the 'with st.sidebar' block
+    uploaded_files = st.file_uploader("Upload Research Papers (Max 5)", accept_multiple_files=True, type="pdf")
+    
+    # This remains inside the 'with st.sidebar' block
+    if st.button("Index Documents"):
+        if uploaded_files:
+            with st.spinner("RacXo is indexing..."):
+                status = engine.process_and_index_pdfs_temporary(uploaded_files, st.session_state.session_id)
+                st.success(status)
+        else:
+            st.warning("Please select files first.")
+            
+    # This button stays in the sidebar too
+    synthesize_clicked = st.button("Synthesize Research")
+
+# --- Main App Area (OUTSIDE the sidebar block) ---
+# Notice there is NO indentation here
+if synthesize_clicked:
+    with st.spinner("RacXo is analyzing across all papers..."):
+        report = engine.synthesize_research(st.session_state.session_id)
+        st.markdown(report)
+
     # 5-file limit enforced
     uploaded_files = st.file_uploader(
         "Upload Research Papers (Max 5)", 

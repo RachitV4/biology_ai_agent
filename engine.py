@@ -11,19 +11,8 @@ embeddings = OllamaEmbeddings(model="nomic-embed-text")
 llm = ChatOllama(model="qwen3:14b")
 
 def process_and_index_pdfs(directory_path, session_id):
-    """Reads PDFs, chunks them, and stores in ChromaDB."""
-    vector_db = Chroma(
-        persist_directory="./my_vector_db", 
-        embedding_function=embeddings, 
-        collection_name=session_id
-    )
-    
-    # Semantic splitter for biology context preservation
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, 
-        chunk_overlap=200,
-        add_start_index=True
-    )
+    vector_db = Chroma(persist_directory="./my_vector_db", embedding_function=embeddings, collection_name=session_id)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, add_start_index=True)
     
     for filename in os.listdir(directory_path):
         if filename.endswith(".pdf"):
@@ -35,14 +24,9 @@ def process_and_index_pdfs(directory_path, session_id):
                 vector_db.add_documents(chunks)
             except Exception as e:
                 print(f"Error indexing {filename}: {e}")
-    
-    return f"Indexed into session: {session_id}"
+    return f"Indexed {len(os.listdir(directory_path))} papers into session: {session_id}"
 
 def process_and_index_pdfs_temporary(uploaded_files, session_id):
-    """
-    Saves uploaded web files to a temporary directory 
-    then triggers the indexer so no permanent files are left on disk.
-    """
     with tempfile.TemporaryDirectory() as temp_dir:
         for uploaded_file in uploaded_files:
             temp_path = Path(temp_dir) / uploaded_file.name
@@ -51,30 +35,19 @@ def process_and_index_pdfs_temporary(uploaded_files, session_id):
         return process_and_index_pdfs(temp_dir, session_id)
 
 def ask_agent(query, session_id):
-    vector_db = Chroma(
-        persist_directory="./my_vector_db", 
-        embedding_function=embeddings, 
-        collection_name=session_id
-    )
+    vector_db = Chroma(persist_directory="./my_vector_db", embedding_function=embeddings, collection_name=session_id)
     
-    # Retrieve the 4 most relevant chunks
-    docs = vector_db.similarity_search(query, k=4)
+    # Updated to k=10 for broader cross-document context
+    docs = vector_db.similarity_search(query, k=10)
     if not docs:
         return "I couldn't find relevant information in the uploaded papers."
         
-    # Create a string with context and track sources
-    context_text = ""
-    sources = set()
-    for doc in docs:
-        context_text += f"\n\nSource: {doc.metadata.get('source', 'Unknown')}\nContent: {doc.page_content}"
-        sources.add(doc.metadata.get('source', 'Unknown'))
+    context_text = "\n\n".join([f"Source: {doc.metadata.get('source')}\nContent: {doc.page_content}" for doc in docs])
     
-    # Prompt the LLM to include citations
-   # Update the prompt inside ask_agent in engine.py
     prompt = f"""
     You are an expert biology research assistant. 
     Use the provided research context to answer the question.
-    Cite the sources provided in the context (e.g., use the filename provided in the 'Source' tag).
+    Cite the Source name for every claim you make.
     
     Context:
     {context_text}
@@ -82,7 +55,28 @@ def ask_agent(query, session_id):
     Question: 
     {query}
     """
+    return llm.invoke(prompt).content
+
+def synthesize_research(session_id):
+    """Generates a summary report across all indexed papers."""
+    vector_db = Chroma(persist_directory="./my_vector_db", embedding_function=embeddings, collection_name=session_id)
     
+    # Fetch all documents in the collection
+    docs = vector_db.get()
+    if not docs['documents']:
+        return "No documents indexed yet."
+        
+    context_text = "\n\n".join([f"Source: {d.get('source')}\nContent: {c}" for d, c in zip(docs['metadatas'], docs['documents'])])
     
-    response = llm.invoke(prompt)
-    return response.content
+    prompt = f"""
+    You are a Senior Biology Research Analyst. 
+    Analyze the following research papers and provide a professional synthesis report.
+    Structure your report into:
+    1. Common Themes across all papers.
+    2. Key Methodological Differences.
+    3. Any conflicting findings between the sources.
+    
+    Context:
+    {context_text}
+    """
+    return llm.invoke(prompt).content

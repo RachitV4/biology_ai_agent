@@ -1,5 +1,6 @@
 import streamlit as st
 import engine
+import os
 
 # --- Branding & Page Config ---
 # '🧬' emoji as tab icon

@@ -58,25 +58,28 @@ def ask_agent(query, session_id):
     return llm.invoke(prompt).content
 
 def synthesize_research(session_id):
-    """Generates a summary report across all indexed papers."""
     vector_db = Chroma(persist_directory="./my_vector_db", embedding_function=embeddings, collection_name=session_id)
-    
-    # Fetch all documents in the collection
     docs = vector_db.get()
     if not docs['documents']:
         return "No documents indexed yet."
         
-    context_text = "\n\n".join([f"Source: {d.get('source')}\nContent: {c}" for d, c in zip(docs['metadatas'], docs['documents'])])
+    context_text = "\n\n".join([f"SOURCE_FILE: {d.get('source')}\nCONTENT: {c}" for d, c in zip(docs['metadatas'], docs['documents'])])
     
     prompt = f"""
     You are a Senior Biology Research Analyst. 
-    Analyze the following research papers and provide a professional synthesis report.
+    Analyze the following research context.
+    
+    CRITICAL INSTRUCTION: You must group your analysis by the 'SOURCE_FILE' tag. Do not summarize themes globally until you have first analyzed every file individually.
+    
     Structure your report into:
-    1. Common Themes across all papers.
-    2. Key Methodological Differences.
-    3. Any conflicting findings between the sources.
+    1. Analysis per Document: For every unique 'SOURCE_FILE' found in the context, create a dedicated subsection. 
+       State the name of the file and list its top 3 key technical ideas/findings clearly.
+    2. Cross-Document Synthesis: Discuss common themes and conflicting findings across these papers.
+    3. Notable Researchers & Contributions: Identify the key authors and their focus.
+    4. Technical Challenges: Summarize the main obstacles identified.
     
     Context:
     {context_text}
     """
     return llm.invoke(prompt).content
+   
